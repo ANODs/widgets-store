@@ -184,7 +184,7 @@ async function frame(env, url, id) {
       'content-security-policy': FRAME_CSP,
       'x-content-type-options': 'nosniff',
       'referrer-policy': 'no-referrer',
-      'cache-control': w.status === 'published' ? 'public, max-age=300' : 'no-store',
+      'cache-control': w.status === 'published' ? 'public, max-age=60' : 'no-store',
     },
   });
 }

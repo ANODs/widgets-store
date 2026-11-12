@@ -30,7 +30,8 @@ export async function api(path, { method = 'GET', body } = {}) {
 
 export const iconUrl = (w) => (w.icon_v ? `${API}/img/${w.id}/icon?v=${w.icon_v}` : null);
 export const shotUrl = (w, scheme) => (w.shot_v ? `${API}/img/${w.id}/${scheme}?v=${w.shot_v}` : null);
-export const frameUrl = (id, scheme, v = 0) => `${API}/frame/${id}?theme=${scheme}&v=${v}`;
+// r: bump to drop frames that browsers cached under an older frame policy
+export const frameUrl = (id, scheme, v = 0) => `${API}/frame/${id}?theme=${scheme}&v=${v}&r=3`;
 export const shareUrl = (id) => `https://t.me/${BOT}?start=w_${id}`;
 
 export function openLink(url) {
