@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkHtml, frameDoc, parseLink, signInitData, verifyInitData } from '../src/lib.js';
+import { botAvatarUrl, checkHtml, frameDoc, parseLink, signInitData, verifyInitData } from '../src/lib.js';
 
 const TOKEN = '123456:TEST-TOKEN';
 
@@ -49,4 +49,12 @@ test('frameDoc keeps widget state from breaking out of the script', () => {
   assert.ok(!doc.includes('</script><script>alert(1)'));
   assert.ok(doc.includes('--tg-theme-bg-color:#212d3b'));
   assert.ok(doc.endsWith('<p>hi</p>'));
+});
+
+test('botAvatarUrl takes only real avatars from Telegram hosts', () => {
+  const page = (url) => `<head><meta property="og:image" content="${url}"></head>`;
+  assert.equal(botAvatarUrl(page('https://cdn4.telesco.pe/file/abc.jpg')), 'https://cdn4.telesco.pe/file/abc.jpg');
+  assert.equal(botAvatarUrl(page('https://telegram.org/img/t_logo_2x.png')), null);
+  assert.equal(botAvatarUrl(page('https://evil.example/telesco.pe/a.jpg')), null);
+  assert.equal(botAvatarUrl('<html></html>'), null);
 });

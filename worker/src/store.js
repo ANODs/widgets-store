@@ -1,4 +1,4 @@
-import { newId } from './lib.js';
+import { botAvatarUrl, newId } from './lib.js';
 
 const PUBLIC = 'id, status, name, short, category, bot, link, featured, opens, demos, icon_v, shot_v, shot_h, size, packed, published, created';
 
@@ -78,4 +78,21 @@ export async function removeWidget(env, id) {
     env.DB.prepare('DELETE FROM widgets WHERE id = ?').bind(id),
     env.DB.prepare('DELETE FROM blobs WHERE id = ?').bind(id),
   ]);
+}
+
+// Copies the avatar of the author's bot into the widget's icon. Returns true when an icon was stored.
+export async function fetchBotIcon(env, id, bot) {
+  if (!/^[A-Za-z][A-Za-z0-9_]{3,31}$/.test(bot || '')) return false;
+  const page = await fetch(`https://t.me/${bot}`, { headers: { 'user-agent': 'Mozilla/5.0' } });
+  if (!page.ok) return false;
+  const url = botAvatarUrl(await page.text());
+  if (!url) return false;
+  const img = await fetch(url);
+  const type = (img.headers.get('content-type') || '').split(';')[0];
+  if (!img.ok || !/^image\/(jpeg|png|webp)$/.test(type)) return false;
+  const data = new Uint8Array(await img.arrayBuffer());
+  if (!data.length || data.length > 400000) return false;
+  await putBlob(env, id, 'icon', type, data);
+  await env.DB.prepare('UPDATE widgets SET icon_v = ? WHERE id = ?').bind(Date.now(), id).run();
+  return true;
 }

@@ -1,5 +1,5 @@
 import { checkHtml, esc, LIMIT_PACKED, LIMIT_RAW } from './lib.js';
-import { claimOwner, createDraft, getWidget, ownerId, removeWidget } from './store.js';
+import { claimOwner, createDraft, fetchBotIcon, getWidget, ownerId, removeWidget } from './store.js';
 import { shoot } from './shot.js';
 
 const RU = new Set(['ru', 'uk', 'be', 'kk']);
@@ -138,6 +138,7 @@ async function onCallback(env, ctx, origin, q) {
     note = w.featured ? 'Убран из подборки' : 'Добавлен в подборку';
   }
   if (action === 'shot') {
+    if (w.icon_v <= 0) await fetchBotIcon(env, id, w.bot).catch(() => {});
     try { await shoot(env, origin, id); note = 'Скриншоты обновлены'; } catch (e) { note = `Не вышло: ${e.message}`.slice(0, 190); }
   }
   w = await getWidget(env, id);

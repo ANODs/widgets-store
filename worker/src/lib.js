@@ -1,6 +1,7 @@
 import { deflateSync } from 'node:zlib';
 
-export const CATEGORIES = ['donations', 'games', 'giveaways', 'polls', 'finance', 'tools', 'fun', 'other'];
+export const CATEGORIES = ['donations', 'games', 'giveaways', 'polls', 'finance', 'crypto', 'shopping', 'news', 'health', 'sport',
+  'education', 'productivity', 'media', 'social', 'travel', 'tools', 'fun', 'other'];
 export const LIMIT_RAW = 32768;
 export const LIMIT_PACKED = 4096;
 // Node's zlib and Telegram's server differ by up to ~150 bytes, so Telegram itself has the final say.
@@ -123,3 +124,15 @@ ${html}`;
 }
 
 export const FRAME_CSP = "sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; font-src data:; media-src data:";
+
+// The public t.me page of a bot carries its avatar; a bot without one gets Telegram's own logo, which we skip.
+export function botAvatarUrl(pageHtml) {
+  const m = /<meta property="og:image" content="(https:\/\/[^"]+)"/.exec(pageHtml || '');
+  if (!m) return null;
+  try {
+    const host = new URL(m[1]).hostname;
+    return /(^|\.)(telesco\.pe|cdn-telegram\.org)$/.test(host) ? m[1] : null;
+  } catch {
+    return null;
+  }
+}

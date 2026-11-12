@@ -26,7 +26,9 @@ const S = {
     status_draft: 'Черновик', status_pending: 'На проверке', status_published: 'Опубликован', status_rejected: 'Отклонён',
     sandboxNote: 'Это превью: действие отключено. Открой виджет у автора.',
     cat_donations: 'Донаты', cat_games: 'Игры', cat_giveaways: 'Розыгрыши', cat_polls: 'Опросы',
-    cat_finance: 'Финансы', cat_tools: 'Утилиты', cat_fun: 'Развлечения', cat_other: 'Другое',
+    cat_finance: 'Финансы', cat_crypto: 'Крипта', cat_shopping: 'Покупки', cat_news: 'Новости и инфо', cat_health: 'Здоровье',
+    cat_sport: 'Спорт', cat_education: 'Обучение', cat_productivity: 'Продуктивность', cat_media: 'Музыка и видео',
+    cat_social: 'Общение', cat_travel: 'Путешествия', cat_tools: 'Утилиты', cat_fun: 'Развлечения', cat_other: 'Другое',
     err_network: 'Нет связи с сервером', err_internal: 'Что-то пошло не так', err_auth: 'Откройте каталог в Telegram',
     err_name: 'Укажи название', err_short: 'Добавь короткое описание', err_category: 'Выбери категорию',
     err_link: 'Ссылка должна вести на t.me/твой_бот', err_empty: 'Добавь HTML виджета',
@@ -56,7 +58,9 @@ const S = {
     status_draft: 'Draft', status_pending: 'In review', status_published: 'Published', status_rejected: 'Rejected',
     sandboxNote: 'This is a preview: the action is turned off. Open the widget at the author.',
     cat_donations: 'Donations', cat_games: 'Games', cat_giveaways: 'Giveaways', cat_polls: 'Polls',
-    cat_finance: 'Finance', cat_tools: 'Tools', cat_fun: 'Fun', cat_other: 'Other',
+    cat_finance: 'Finance', cat_crypto: 'Crypto', cat_shopping: 'Shopping', cat_news: 'News & Info', cat_health: 'Health',
+    cat_sport: 'Sport', cat_education: 'Education', cat_productivity: 'Productivity', cat_media: 'Music & Video',
+    cat_social: 'Social', cat_travel: 'Travel', cat_tools: 'Tools', cat_fun: 'Fun', cat_other: 'Other',
     err_network: 'No connection to the server', err_internal: 'Something went wrong', err_auth: 'Open the catalog in Telegram',
     err_name: 'Enter a name', err_short: 'Add a short description', err_category: 'Choose a category',
     err_link: 'The link must lead to t.me/your_bot', err_empty: 'Add the widget HTML',
@@ -68,4 +72,7 @@ const S = {
 
 export const t = (key) => S[lang][key] ?? S.en[key] ?? key;
 export const errorText = (e) => S[lang][`err_${e?.code}`] || S[lang].err_internal;
-export const CATEGORY_EMOJI = { donations: '💎', games: '🎮', giveaways: '🎁', polls: '📊', finance: '📈', tools: '🧰', fun: '🎉', other: '✨' };
+export const CATEGORY_EMOJI = {
+  donations: '💎', games: '🎮', giveaways: '🎁', polls: '📊', finance: '📈', crypto: '🪙', shopping: '🛍️', news: '📰', health: '❤️',
+  sport: '⚽', education: '🎓', productivity: '✅', media: '🎧', social: '💬', travel: '✈️', tools: '🧰', fun: '🎉', other: '✨',
+};

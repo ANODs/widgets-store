@@ -1,5 +1,5 @@
 import { bytes, CATEGORIES, checkHtml, FRAME_CSP, frameDoc, parseLink, verifyInitData } from './lib.js';
-import { categoryCounts, createDraft, getBlob, getWidget, listWidgets, ownerId, publicColumns, putBlob, removeWidget } from './store.js';
+import { categoryCounts, createDraft, fetchBotIcon, getBlob, getWidget, listWidgets, ownerId, publicColumns, putBlob, removeWidget } from './store.js';
 import { handleUpdate, sendDemo, sendToModeration } from './bot.js';
 import { shoot } from './shot.js';
 
@@ -28,7 +28,7 @@ const needUser = async (req, env) => (await userOf(req, env)) || fail(401, 'auth
 
 const view = (w) => ({
   id: w.id, status: w.status, name: w.name, short: w.short, category: w.category, bot: w.bot, link: w.link,
-  featured: !!w.featured, opens: w.opens + w.demos, icon_v: w.icon_v, shot_v: Math.max(0, w.shot_v), shot_h: w.shot_h,
+  featured: !!w.featured, opens: w.opens + w.demos, icon_v: Math.max(0, w.icon_v), shot_v: Math.max(0, w.shot_v), shot_h: w.shot_h,
   size: w.size, packed: w.packed, published: w.published, created: w.created,
 });
 
@@ -104,6 +104,11 @@ async function api(req, env, ctx, url) {
       const user = w.status === 'published' ? null : await userOf(req, env);
       const mine = !!user && (w.owner_id === user.id || user.id === (await ownerId(env)));
       if (w.status !== 'published' && !mine) fail(404, 'not_found');
+      if (w.status === 'published' && w.icon_v === 0) {
+        // No icon yet: take the avatar of the author's bot once (-1 marks the attempt)
+        const res = await env.DB.prepare('UPDATE widgets SET icon_v = -1 WHERE id = ? AND icon_v = 0').bind(id).run();
+        if (res.meta.changes) ctx.waitUntil(fetchBotIcon(env, id, w.bot).catch((e) => console.error('icon', e.message)));
+      }
       if (w.status === 'published' && w.shot_v === 0) {
         // First view of a widget without pictures: render them once in the background (-1 marks the attempt)
         const res = await env.DB.prepare('UPDATE widgets SET shot_v = -1 WHERE id = ? AND shot_v = 0').bind(id).run();
@@ -152,6 +157,8 @@ async function api(req, env, ctx, url) {
       }
       await env.DB.prepare(`UPDATE widgets SET name = ?, short = ?, description = ?, category = ?, bot = ?, link = ?, public_data = ?, icon_v = ?, status = 'pending' WHERE id = ?`)
         .bind(name, short, description, body.category, link.bot, link.link, publicData, iconV, id).run();
+      // Without an uploaded icon the widget takes the avatar of the author's bot (again on every resubmit, the bot may have changed)
+      if (!body.icon && (w.icon_v <= 0 || w.bot !== link.bot)) ctx.waitUntil(fetchBotIcon(env, id, link.bot).catch((e) => console.error('icon', e.message)));
       ctx.waitUntil(sendToModeration(env, await getWidget(env, id)).catch((e) => console.error('moderation', e.message)));
       return json({ ok: true, status: 'pending' });
     }
