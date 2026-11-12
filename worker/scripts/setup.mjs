@@ -58,11 +58,9 @@ try {
 
 await api('setWebhook', { url: `${url}/tg`, secret_token: secret, allowed_updates: ['message', 'callback_query'] });
 const commands = (submit, my) => [{ command: 'start', description: 'Widgets Store' }, { command: 'submit', description: submit }, { command: 'my', description: my }];
-await api('setMyCommands', { commands: commands('Add your widget', 'My widgets') });
-await api('setMyCommands', { commands: commands('Добавить свой виджет', 'Мои виджеты'), language_code: 'ru' });
+await api('setMyCommands', { commands: commands('Add your widget', 'My widgets: update them') });
+await api('setMyCommands', { commands: commands('Добавить свой виджет', 'Мои виджеты: обновить'), language_code: 'ru' });
 await api('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Store', web_app: { url: webUrl } } });
-await api('setMyShortDescription', { short_description: 'A catalog of Telegram widgets. Browse them and submit your own.' });
-await api('setMyShortDescription', { short_description: 'Каталог виджетов для Telegram. Смотри чужие и добавляй свои.', language_code: 'ru' });
 
 writeFileSync(new URL('../../web/.env.production', import.meta.url), `VITE_API=${url}\nVITE_BOT=${me.username}\n`);
 console.log(`\nDone. Worker: ${url}\nWeb app: ${webUrl}`);

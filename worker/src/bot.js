@@ -1,5 +1,5 @@
 import { checkHtml, esc, LIMIT_PACKED, LIMIT_RAW } from './lib.js';
-import { claimOwner, createDraft, fetchBotIcon, getWidget, ownerId, removeWidget } from './store.js';
+import { applyUpdate, claimOwner, createDraft, createUpdateDraft, fetchBotIcon, getSetting, getWidget, ownerId, removeWidget, setSetting } from './store.js';
 import { shoot } from './shot.js';
 
 const RU = new Set(['ru', 'uk', 'be', 'kk']);
@@ -23,6 +23,16 @@ const T = {
     view: 'Открыть в каталоге',
     demo: (n) => `Демо виджета «${n}». Настоящий, со всеми функциями — у автора.`,
     author: 'Открыть у автора',
+    myEmpty: 'У тебя пока нет виджетов в каталоге. Перешли сюда виджет или пришли его HTML-файлом, чтобы добавить первый.',
+    myList: '<b>Твои виджеты</b>\n\nНажми на виджет, чтобы обновить его: я попрошу прислать новую версию.',
+    updateBtn: (n) => `🔄 Обновить «${n}»`,
+    sendNew: (n) => `Обновляем «${n}». Перешли сюда сообщение с новой версией виджета или пришли её HTML-файлом. Карточка останется прежней, её можно будет поправить после.\n\nПередумал — отправь /cancel.`,
+    updateSent: (n) => `Новая версия «${n}» отправлена на проверку. Пока её не одобрят, в каталоге остаётся прежняя.`,
+    editCard: 'Поправить карточку',
+    updated: (n) => `🎉 Обновление виджета «${n}» опубликовано.`,
+    cancelled: 'Отменил.',
+    notYours: 'Это не твой виджет',
+    update: 'Обновить виджет',
   },
   en: {
     start: '<b>Widgets Store</b> is a catalog of Telegram widgets.\n\nSee what others have built and add your own: forward a widget message here or send its HTML as a file.',
@@ -41,6 +51,16 @@ const T = {
     view: 'Open in the catalog',
     demo: (n) => `Demo of the widget “${n}”. The real one, with all its features, is at the author's bot.`,
     author: 'Open at the author',
+    myEmpty: 'You have no widgets in the catalog yet. Forward a widget here or send its HTML file to add the first one.',
+    myList: '<b>Your widgets</b>\n\nTap a widget to update it: I will ask for the new version.',
+    updateBtn: (n) => `🔄 Update “${n}”`,
+    sendNew: (n) => `Updating “${n}”. Forward a message with the new version of the widget here or send it as an HTML file. The card stays as it is; you can edit it afterwards.\n\nChanged your mind? Send /cancel.`,
+    updateSent: (n) => `The new version of “${n}” was sent for review. Until it is approved, the catalog keeps the current one.`,
+    editCard: 'Edit the card',
+    updated: (n) => `🎉 The update of “${n}” is now live.`,
+    cancelled: 'Cancelled.',
+    notYours: 'This is not your widget',
+    update: 'Update the widget',
   },
 };
 
@@ -91,7 +111,7 @@ const modKeyboard = (w) => ({
 });
 
 const modText = (w) => [
-  `${w.status === 'published' ? '✅ Опубликован' : w.status === 'rejected' ? '❌ Отклонён' : '🆕 Заявка'}: <b>${esc(w.name)}</b>`,
+  `${w.update_of ? '🔄 Обновление' : w.status === 'published' ? '✅ Опубликован' : w.status === 'rejected' ? '❌ Отклонён' : '🆕 Заявка'}: <b>${esc(w.name)}</b>${w.update_of ? ` (вместо <code>${w.update_of}</code>)` : ''}`,
   esc(w.short),
   '',
   esc(w.description),
@@ -111,24 +131,43 @@ export async function sendToModeration(env, w) {
   await say(env, owner, modText(w), { reply_markup: modKeyboard(w) });
 }
 
+const langFor = async (env, userId) => (await getSetting(env, `lang:${userId}`)) || 'ru';
+const ownerKeyboard = (env, t, id) => ({
+  inline_keyboard: [[{ text: t.view, web_app: { url: webUrl(env, `w/${id}`) } }], [{ text: t.update, callback_data: `upd:${id}` }]],
+});
+
 async function publish(env, ctx, origin, w) {
+  const t = T[await langFor(env, w.owner_id)];
+  if (w.update_of) {
+    // An approved update replaces the published version in place
+    await applyUpdate(env, w);
+    ctx.waitUntil(shoot(env, origin, w.update_of).catch((e) => console.error('shot', e.message)));
+    await say(env, w.owner_id, t.updated(esc(w.name)), { reply_markup: ownerKeyboard(env, t, w.update_of) }).catch(() => {});
+    return;
+  }
   await env.DB.prepare("UPDATE widgets SET status = 'published', published = COALESCE(published, ?), reject_reason = NULL WHERE id = ?").bind(Date.now(), w.id).run();
   ctx.waitUntil(shoot(env, origin, w.id).catch((e) => console.error('shot', e.message)));
-  const lang = (await env.DB.prepare('SELECT value FROM settings WHERE key = ?').bind(`lang:${w.owner_id}`).first())?.value || 'ru';
-  await say(env, w.owner_id, T[lang].published(esc(w.name)), { reply_markup: appButton(env, T[lang].view, `w/${w.id}`) }).catch(() => {});
+  await say(env, w.owner_id, t.published(esc(w.name)), { reply_markup: ownerKeyboard(env, t, w.id) }).catch(() => {});
 }
 
 async function decline(env, w) {
   await env.DB.prepare("UPDATE widgets SET status = 'rejected', featured = 0 WHERE id = ?").bind(w.id).run();
-  const lang = (await env.DB.prepare('SELECT value FROM settings WHERE key = ?').bind(`lang:${w.owner_id}`).first())?.value || 'ru';
+  const lang = await langFor(env, w.owner_id);
   await say(env, w.owner_id, T[lang].declined(esc(w.name)), { reply_markup: appButton(env, T[lang].fill, `submit/${w.id}`) }).catch(() => {});
 }
 
 async function onCallback(env, ctx, origin, q) {
   const answer = (text) => tg(env, 'answerCallbackQuery', { callback_query_id: q.id, text }).catch(() => {});
-  if (q.from.id !== (await ownerId(env))) return answer('Только для модератора');
   const [action, id] = String(q.data || '').split(':');
   let w = await getWidget(env, id);
+  if (action === 'upd') {
+    const t = T[langOf(q.from)];
+    if (!w || w.status !== 'published' || (w.owner_id !== q.from.id && q.from.id !== (await ownerId(env)))) return answer(t.notYours);
+    await setSetting(env, `upd:${q.from.id}`, `${id}:${Date.now()}`);
+    await say(env, q.from.id, t.sendNew(esc(w.name)));
+    return answer();
+  }
+  if (q.from.id !== (await ownerId(env))) return answer('Только для модератора');
   if (!w) return answer('Виджет не найден');
   let note = '';
   if (action === 'ok') { await publish(env, ctx, origin, w); note = 'Опубликован'; }
@@ -141,8 +180,8 @@ async function onCallback(env, ctx, origin, q) {
     if (w.icon_v <= 0 || w.icon_bot) await fetchBotIcon(env, id, w.bot).catch(() => {});
     try { await shoot(env, origin, id); note = 'Скриншоты обновлены'; } catch (e) { note = `Не вышло: ${e.message}`.slice(0, 190); }
   }
-  w = await getWidget(env, id);
-  if (q.message) {
+  w = (await getWidget(env, id)) || (w.update_of ? await getWidget(env, w.update_of) : null);
+  if (q.message && w) {
     await tg(env, 'editMessageText', {
       chat_id: q.message.chat.id, message_id: q.message.message_id, text: modText(w), parse_mode: 'HTML',
       link_preview_options: { is_disabled: true }, reply_markup: modKeyboard(w),
@@ -169,6 +208,15 @@ async function takeWidget(env, msg, input) {
     } catch (e) {
       return say(env, chat, t.rejected_by_tg(esc(e.description || e.message)));
     }
+  }
+  const [targetId, since] = String((await getSetting(env, `upd:${msg.from.id}`)) || '').split(':');
+  const target = targetId && Date.now() - Number(since) < 3600e3 ? await getWidget(env, targetId) : null;
+  if (target && target.status === 'published' && (target.owner_id === msg.from.id || msg.from.id === (await ownerId(env)))) {
+    // The author pressed Update for this widget: the new code goes to review as its next version
+    await setSetting(env, `upd:${msg.from.id}`, '');
+    const id = await createUpdateDraft(env, target, { ...input, size: check.size, packed: check.packed }, 'pending');
+    await sendToModeration(env, await getWidget(env, id)).catch((e) => console.error('moderation', e.message));
+    return say(env, chat, t.updateSent(esc(target.name)), { reply_markup: appButton(env, t.editCard, `submit/${id}`) });
   }
   const id = await createDraft(env, msg.from, { ...input, size: check.size, packed: check.packed });
   return say(env, chat, t.got(check), { reply_markup: appButton(env, t.fill, `submit/${id}`) });
@@ -215,7 +263,16 @@ async function onMessage(env, msg) {
     return say(env, chat, t.start, { reply_markup: appButton(env, t.open, w ? `w/${w[1]}` : '') });
   }
   if (name === 'submit' || name === 'help') return say(env, chat, t.submit);
-  if (name === 'my') return say(env, chat, t.start, { reply_markup: appButton(env, t.open, 'mine') });
+  if (name === 'my' || name === 'update') {
+    const res = await env.DB.prepare("SELECT id, name FROM widgets WHERE owner_id = ? AND status = 'published' ORDER BY published DESC LIMIT 20").bind(msg.from.id).all();
+    const open = [{ text: t.open, web_app: { url: webUrl(env, 'mine') } }];
+    if (!res.results.length) return say(env, chat, t.myEmpty, { reply_markup: { inline_keyboard: [open] } });
+    return say(env, chat, t.myList, { reply_markup: { inline_keyboard: [...res.results.map((w) => [{ text: t.updateBtn(w.name), callback_data: `upd:${w.id}` }]), open] } });
+  }
+  if (name === 'cancel') {
+    await setSetting(env, `upd:${msg.from.id}`, '');
+    return say(env, chat, t.cancelled);
+  }
   if (name === 'id') return say(env, chat, `<code>${msg.from.id}</code>`);
 
   if (msg.from.id === (await ownerId(env))) {

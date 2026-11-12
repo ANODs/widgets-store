@@ -1,6 +1,6 @@
 import { botAvatarUrl, newId } from './lib.js';
 
-const PUBLIC = 'id, status, name, short, category, bot, link, featured, opens, demos, icon_v, shot_v, shot_h, size, packed, published, created';
+const PUBLIC = 'id, status, update_of, name, short, category, bot, link, featured, opens, demos, icon_v, shot_v, shot_h, size, packed, published, created';
 
 export const publicColumns = PUBLIC;
 
@@ -95,4 +95,36 @@ export async function fetchBotIcon(env, id, bot) {
   await putBlob(env, id, 'icon', type, data);
   await env.DB.prepare('UPDATE widgets SET icon_v = ?, icon_bot = 1 WHERE id = ?').bind(Date.now(), id).run();
   return true;
+}
+
+const COPIED = 'owner_id, owner_name, name, short, description, category, bot, link, html, public_data, chat_data, width, height, size, packed, source, icon_v, icon_bot';
+
+// An update to a published widget is a separate draft row that points at it. The published version
+// stays in the catalog until the moderator approves the update.
+export async function createUpdateDraft(env, orig, changes = {}, status = 'draft') {
+  const old = await env.DB.prepare('SELECT id FROM widgets WHERE update_of = ?').bind(orig.id).all();
+  for (const row of old.results) await removeWidget(env, row.id);
+  const id = newId();
+  await env.DB.prepare(`INSERT INTO widgets (id, status, update_of, created, ${COPIED}) SELECT ?, ?, id, ?, ${COPIED} FROM widgets WHERE id = ?`)
+    .bind(id, status, Date.now(), orig.id).run();
+  await env.DB.prepare("INSERT INTO blobs (id, kind, type, data) SELECT ?, kind, type, data FROM blobs WHERE id = ? AND kind = 'icon'").bind(id, orig.id).run();
+  if (changes.html) {
+    await env.DB.prepare('UPDATE widgets SET html = ?, public_data = ?, chat_data = ?, width = ?, height = ?, size = ?, packed = ?, source = ? WHERE id = ?')
+      .bind(changes.html, changes.public_data ?? orig.public_data ?? null, changes.chat_data ?? null, changes.width || 0, changes.height || 0,
+        changes.size, changes.packed, changes.source || 'file', id).run();
+  }
+  return id;
+}
+
+// Moves an approved update into the published widget and removes the draft row.
+export async function applyUpdate(env, draft) {
+  const fields = 'name, short, description, category, bot, link, html, public_data, chat_data, width, height, size, packed, source, icon_v, icon_bot';
+  await env.DB.prepare(`UPDATE widgets SET (${fields}) = (SELECT ${fields} FROM widgets WHERE id = ?), shot_v = 0, shot_h = 0, reject_reason = NULL WHERE id = ?`)
+    .bind(draft.id, draft.update_of).run();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM blobs WHERE id = ? AND kind = 'icon'").bind(draft.update_of),
+    env.DB.prepare("UPDATE blobs SET id = ? WHERE id = ? AND kind = 'icon'").bind(draft.update_of, draft.id),
+    env.DB.prepare('DELETE FROM blobs WHERE id = ?').bind(draft.id),
+    env.DB.prepare('DELETE FROM widgets WHERE id = ?').bind(draft.id),
+  ]);
 }

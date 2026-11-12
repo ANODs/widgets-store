@@ -163,6 +163,7 @@ export function WidgetPage({ id }) {
   const nav = useNav();
   const appScheme = useScheme();
   const [scheme, setScheme] = useState(appScheme);
+  const [busy, setBusy] = useState(false);
   const { data: w, loading, error } = useLoad(() => api(`/widgets/${id}`), [id]);
   useEffect(() => setScheme(appScheme), [appScheme]);
 
@@ -173,6 +174,16 @@ export function WidgetPage({ id }) {
     haptic();
     api(`/widgets/${id}/open`, { method: 'POST' }).catch(() => {});
     openLink(w.link);
+  };
+  const update = async () => {
+    setBusy(true);
+    try {
+      const draft = await api(`/widgets/${id}/update`, { method: 'POST' });
+      nav(`submit/${draft.id}`);
+    } catch (e) {
+      toast(errorText(e));
+      setBusy(false);
+    }
   };
   const share = () => {
     const url = shareUrl(id);
@@ -197,6 +208,9 @@ export function WidgetPage({ id }) {
         </div>
       </div>
       {w.status !== 'published' ? <div className="pad"><span className={`badge badge-${w.status}`}>{t(`status_${w.status}`)}</span></div> : null}
+      {w.mine && w.status === 'published' ? (
+        <div className="pad"><button className="secondary" disabled={busy} onClick={update}>🔄 {t('updateWidget')}</button></div>
+      ) : null}
       <div className="stats">
         <div><b>{w.opens}</b><span>{t('opens')}</span></div>
         <div onClick={() => nav(`cat/${w.category}`)}><b>{CATEGORY_EMOJI[w.category]}</b><span>{t(`cat_${w.category}`)}</span></div>
@@ -284,6 +298,23 @@ function EditDraft({ id }) {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
+  const [version, setVersion] = useState(0);
+  const [size, setSize] = useState(null);
+  const replaceHtml = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setBusy(true);
+    try {
+      const res = await api(`/widgets/${id}/html`, { method: 'POST', body: { html: await file.text() } });
+      setSize(res.size);
+      setVersion((v) => v + 1);
+      toast(t('htmlReplaced'));
+    } catch (err) {
+      toast(errorText(err));
+    }
+    setBusy(false);
+  };
   useEffect(() => {
     if (w) setForm({ name: w.name, short: w.short, description: w.description || '', category: w.category || 'other', link: w.link || '', public_data: w.public_data || '', icon: null });
   }, [w]);
@@ -314,9 +345,11 @@ function EditDraft({ id }) {
   };
   return (
     <>
-      <Header title={w.name || t('submitTitle')} sub={t(`status_${w.status}`)} />
-      <div className={`chat chat-${scheme}`}><LiveFrame id={id} scheme={scheme} fixedHeight={w.height} /></div>
+      <Header title={w.name || t('submitTitle')} sub={w.update_of ? t('updateOf') : t(`status_${w.status}`)} />
+      <div className={`chat chat-${scheme}`}><LiveFrame id={id} scheme={scheme} version={version} fixedHeight={version ? 0 : w.height} /></div>
       <div className="pad stack">
+        <label className="secondary file">{t('replaceHtml')} · {size ?? w.size} {t('bytes')}<input type="file" accept=".html,.htm,text/html" onChange={replaceHtml} hidden /></label>
+        {w.update_of ? <p className="note flat">{t('updateNote')}</p> : null}
         <div className="icon-pick" onClick={() => fileRef.current.click()}>
           {form.icon ? <img className="icon" src={form.icon} alt="" style={{ width: 64, height: 64, borderRadius: 14 }} /> : <Icon w={{ ...w, name: form.name }} />}
           <span className="link">{t('setIcon')}</span>

@@ -22,6 +22,8 @@ const S = {
     name: 'Название', short: 'Короткое описание', description: 'Подробное описание', link: 'Ссылка на твоего бота',
     linkHint: '@username или t.me/username?start=…', categoryField: 'Категория', icon: 'Иконка', setIcon: 'Выбрать иконку',
     sample: 'Пример данных (public_data)', sampleHint: 'С какими данными показывать виджет в превью и демо. До 1024 байт.',
+    updateWidget: 'Обновить виджет', updateOf: 'Обновление', replaceHtml: 'Заменить HTML', htmlReplaced: 'HTML заменён',
+    updateNote: 'Пока обновление не одобрят, в каталоге остаётся прежняя версия.',
     send: 'Отправить на проверку', sent: 'Отправлено на проверку', remove: 'Удалить', removeAsk: 'Удалить этот виджет?',
     status_draft: 'Черновик', status_pending: 'На проверке', status_published: 'Опубликован', status_rejected: 'Отклонён',
     sandboxNote: 'Это превью: действие отключено. Открой виджет у автора.',
@@ -34,7 +36,7 @@ const S = {
     err_link: 'Ссылка должна вести на t.me/твой_бот', err_empty: 'Добавь HTML виджета',
     err_too_big: 'Виджет больше 32 768 байт', err_too_big_packed: 'После сжатия виджет больше 4096 байт',
     err_data_too_big: 'Данные больше 1024 байт', err_bad_icon: 'Не получилось прочитать иконку', err_icon_too_big: 'Иконка слишком большая',
-    err_start_bot: 'Сначала напишите боту /start', err_telegram: 'Telegram не принял виджет', err_not_found: 'Виджет не найден', err_forbidden: 'Нет доступа',
+    err_start_bot: 'Сначала напишите боту /start', err_telegram: 'Telegram не принял виджет', err_not_found: 'Виджет не найден', err_use_update: 'Опубликованный виджет меняется через «Обновить виджет»', err_not_published: 'Виджет ещё не опубликован', err_forbidden: 'Нет доступа',
   },
   en: {
     today: 'Today', cats: 'Categories', top: 'Top', mine: 'Mine', search: 'Search',
@@ -54,6 +56,8 @@ const S = {
     name: 'Name', short: 'Short description', description: 'Long description', link: 'Link to your bot',
     linkHint: '@username or t.me/username?start=…', categoryField: 'Category', icon: 'Icon', setIcon: 'Choose an icon',
     sample: 'Sample data (public_data)', sampleHint: 'The data the widget is shown with in the preview and the demo. Up to 1024 bytes.',
+    updateWidget: 'Update the widget', updateOf: 'Update', replaceHtml: 'Replace the HTML', htmlReplaced: 'HTML replaced',
+    updateNote: 'Until the update is approved, the catalog keeps the current version.',
     send: 'Submit for review', sent: 'Submitted for review', remove: 'Delete', removeAsk: 'Delete this widget?',
     status_draft: 'Draft', status_pending: 'In review', status_published: 'Published', status_rejected: 'Rejected',
     sandboxNote: 'This is a preview: the action is turned off. Open the widget at the author.',
@@ -66,7 +70,7 @@ const S = {
     err_link: 'The link must lead to t.me/your_bot', err_empty: 'Add the widget HTML',
     err_too_big: 'The widget is over 32,768 bytes', err_too_big_packed: 'The widget is over 4096 bytes after compression',
     err_data_too_big: 'The data is over 1024 bytes', err_bad_icon: 'Could not read the icon', err_icon_too_big: 'The icon is too large',
-    err_start_bot: 'Send /start to the bot first', err_telegram: 'Telegram did not accept the widget', err_not_found: 'Widget not found', err_forbidden: 'No access',
+    err_start_bot: 'Send /start to the bot first', err_telegram: 'Telegram did not accept the widget', err_not_found: 'Widget not found', err_use_update: 'A published widget is changed through “Update the widget”', err_not_published: 'The widget is not published yet', err_forbidden: 'No access',
   },
 };
 

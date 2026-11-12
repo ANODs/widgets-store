@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS widgets (
   shot_v INTEGER NOT NULL DEFAULT 0,
   shot_h INTEGER NOT NULL DEFAULT 0,
   reject_reason TEXT,
+  update_of TEXT,
   created INTEGER NOT NULL,
   published INTEGER
 );

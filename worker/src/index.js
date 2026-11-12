@@ -1,5 +1,5 @@
 import { bytes, CATEGORIES, checkHtml, FRAME_CSP, frameDoc, parseLink, verifyInitData } from './lib.js';
-import { categoryCounts, createDraft, fetchBotIcon, getBlob, getWidget, listWidgets, ownerId, publicColumns, putBlob, removeWidget } from './store.js';
+import { categoryCounts, createDraft, createUpdateDraft, fetchBotIcon, getBlob, getWidget, listWidgets, ownerId, publicColumns, putBlob, removeWidget } from './store.js';
 import { handleUpdate, sendDemo, sendToModeration } from './bot.js';
 import { shoot } from './shot.js';
 
@@ -27,7 +27,7 @@ async function userOf(req, env) {
 const needUser = async (req, env) => (await userOf(req, env)) || fail(401, 'auth');
 
 const view = (w) => ({
-  id: w.id, status: w.status, name: w.name, short: w.short, category: w.category, bot: w.bot, link: w.link,
+  id: w.id, status: w.status, update_of: w.update_of || undefined, name: w.name, short: w.short, category: w.category, bot: w.bot, link: w.link,
   featured: !!w.featured, opens: w.opens + w.demos, icon_v: Math.max(0, w.icon_v), shot_v: Math.max(0, w.shot_v), shot_h: w.shot_h,
   size: w.size, packed: w.packed, published: w.published, created: w.created,
 });
@@ -101,7 +101,7 @@ async function api(req, env, ctx, url) {
     if (method === 'GET' && !action) {
       const w = await getWidget(env, id);
       if (!w) fail(404, 'not_found');
-      const user = w.status === 'published' ? null : await userOf(req, env);
+      const user = await userOf(req, env);
       const mine = !!user && (w.owner_id === user.id || user.id === (await ownerId(env)));
       if (w.status !== 'published' && !mine) fail(404, 'not_found');
       // The icon follows the avatar of the author's bot: a failed attempt (stored as a negative time) is retried
@@ -139,9 +139,30 @@ async function api(req, env, ctx, url) {
       return json({ ok: true });
     }
 
+    if (method === 'POST' && action === 'update') {
+      // Starts (or reopens) an update draft for the author's published widget
+      const user = await needUser(req, env);
+      const w = await ownedWidget(env, user, id);
+      if (w.status !== 'published') fail(400, 'not_published');
+      const open = await env.DB.prepare("SELECT id FROM widgets WHERE update_of = ? AND status IN ('draft', 'rejected')").bind(id).first();
+      return json({ id: open ? open.id : await createUpdateDraft(env, w) });
+    }
+
+    if (method === 'POST' && action === 'html') {
+      const user = await needUser(req, env);
+      const w = await ownedWidget(env, user, id);
+      if (w.status === 'published') fail(400, 'use_update');
+      const body = await req.json().catch(() => fail(400, 'bad_json'));
+      const check = checkHtml(body.html);
+      if (!check.ok) fail(400, check.error, { size: check.size, packed: check.packed });
+      await env.DB.prepare("UPDATE widgets SET html = ?, size = ?, packed = ?, width = 0, height = 0, source = 'form' WHERE id = ?").bind(body.html, check.size, check.packed, id).run();
+      return json({ ok: true, size: check.size, packed: check.packed });
+    }
+
     if (method === 'POST' && action === 'submit') {
       const user = await needUser(req, env);
       const w = await ownedWidget(env, user, id);
+      if (w.status === 'published') fail(400, 'use_update');
       const body = await req.json().catch(() => fail(400, 'bad_json'));
       const name = clean(body.name, 40), short = clean(body.short, 70);
       const description = String(body.description ?? '').trim().slice(0, 1500);
