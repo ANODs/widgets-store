@@ -1,0 +1,42 @@
+CREATE TABLE IF NOT EXISTS widgets (
+  id TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'draft',
+  owner_id INTEGER NOT NULL,
+  owner_name TEXT NOT NULL DEFAULT '',
+  name TEXT NOT NULL DEFAULT '',
+  short TEXT NOT NULL DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
+  category TEXT NOT NULL DEFAULT 'other',
+  bot TEXT NOT NULL DEFAULT '',
+  link TEXT NOT NULL DEFAULT '',
+  html TEXT NOT NULL,
+  public_data TEXT,
+  chat_data TEXT,
+  width INTEGER NOT NULL DEFAULT 0,
+  height INTEGER NOT NULL DEFAULT 0,
+  size INTEGER NOT NULL DEFAULT 0,
+  packed INTEGER NOT NULL DEFAULT 0,
+  source TEXT NOT NULL DEFAULT 'file',
+  featured INTEGER NOT NULL DEFAULT 0,
+  opens INTEGER NOT NULL DEFAULT 0,
+  demos INTEGER NOT NULL DEFAULT 0,
+  icon_v INTEGER NOT NULL DEFAULT 0,
+  shot_v INTEGER NOT NULL DEFAULT 0,
+  shot_h INTEGER NOT NULL DEFAULT 0,
+  reject_reason TEXT,
+  created INTEGER NOT NULL,
+  published INTEGER
+);
+CREATE INDEX IF NOT EXISTS widgets_status ON widgets (status, published);
+CREATE INDEX IF NOT EXISTS widgets_owner ON widgets (owner_id);
+CREATE TABLE IF NOT EXISTS blobs (
+  id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  type TEXT NOT NULL,
+  data BLOB NOT NULL,
+  PRIMARY KEY (id, kind)
+);
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);

@@ -1,0 +1,19 @@
+name = "widgets-store"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "widgets-store"
+database_id = "d6d03f83-8fbf-48cc-92e2-d65dd9e1d6e5"
+
+[browser]
+binding = "BROWSER"
+
+[observability]
+enabled = true
+
+[vars]
+BOT_USERNAME = "WidgetsStoreApp"
+WEB_URL = "https://anods.github.io/widgets-store/"

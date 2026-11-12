@@ -1,0 +1,71 @@
+import { user } from './api.js';
+
+const code = (user?.language_code || navigator.language || 'en').slice(0, 2);
+export const lang = ['ru', 'uk', 'be', 'kk'].includes(code) ? 'ru' : 'en';
+
+const S = {
+  ru: {
+    today: 'Сегодня', cats: 'Категории', top: 'Топ', mine: 'Мои', search: 'Поиск',
+    featured: 'Выбор редакции', fresh: 'Новые', popular: 'Популярные', all: 'Все',
+    open: 'Открыть', openAuthor: 'Открыть у автора', demo: 'Демо в чат', demoSent: 'Демо отправлено в чат с ботом',
+    share: 'Поделиться', copied: 'Ссылка скопирована',
+    preview: 'Превью', light: 'Светлая', dark: 'Тёмная', about: 'Описание',
+    previewNote: 'Превью собрано в браузере и может немного отличаться от Telegram. Кнопки, которым нужен бот автора, работают только у автора.',
+    opens: 'открытий', category: 'категория', size: 'размер', bytes: 'байт',
+    empty: 'Здесь пока пусто', emptyHome: 'В каталоге пока нет виджетов. Будь первым!', nothing: 'Ничего не найдено',
+    searchHint: 'Название, описание или бот',
+    addYours: 'Добавить свой виджет', addYoursSub: 'Перешли виджет боту или загрузи HTML',
+    submitTitle: 'Новый виджет', myTitle: 'Мои виджеты',
+    needTg: 'Откройте каталог в Telegram, чтобы добавлять виджеты и получать демо.', openTg: 'Открыть в Telegram',
+    stepForward: 'Перешли боту сообщение с виджетом', stepForwardSub: 'Самый простой способ: бот сам возьмёт код и данные. В обычном Telegram пересылка виджетов пока закрыта, тогда загрузи файл ниже.',
+    openBot: 'Открыть бота', orFile: 'Или загрузи HTML', chooseFile: 'Выбрать файл .html', pasteHtml: 'или вставь HTML сюда', next: 'Дальше',
+    name: 'Название', short: 'Короткое описание', description: 'Подробное описание', link: 'Ссылка на твоего бота',
+    linkHint: '@username или t.me/username?start=…', categoryField: 'Категория', icon: 'Иконка', setIcon: 'Выбрать иконку',
+    sample: 'Пример данных (public_data)', sampleHint: 'С какими данными показывать виджет в превью и демо. До 1024 байт.',
+    send: 'Отправить на проверку', sent: 'Отправлено на проверку', remove: 'Удалить', removeAsk: 'Удалить этот виджет?',
+    status_draft: 'Черновик', status_pending: 'На проверке', status_published: 'Опубликован', status_rejected: 'Отклонён',
+    requestNote: 'В демо запросы к боту автора не работают', copiedText: 'Скопировано',
+    cat_donations: 'Донаты', cat_games: 'Игры', cat_giveaways: 'Розыгрыши', cat_polls: 'Опросы',
+    cat_finance: 'Финансы', cat_tools: 'Утилиты', cat_fun: 'Развлечения', cat_other: 'Другое',
+    err_network: 'Нет связи с сервером', err_internal: 'Что-то пошло не так', err_auth: 'Откройте каталог в Telegram',
+    err_name: 'Укажи название', err_short: 'Добавь короткое описание', err_category: 'Выбери категорию',
+    err_link: 'Ссылка должна вести на t.me/твой_бот', err_empty: 'Добавь HTML виджета',
+    err_too_big: 'Виджет больше 32 768 байт', err_too_big_packed: 'После сжатия виджет больше 4096 байт',
+    err_data_too_big: 'Данные больше 1024 байт', err_bad_icon: 'Не получилось прочитать иконку', err_icon_too_big: 'Иконка слишком большая',
+    err_start_bot: 'Сначала напишите боту /start', err_telegram: 'Telegram не принял виджет', err_not_found: 'Виджет не найден', err_forbidden: 'Нет доступа',
+  },
+  en: {
+    today: 'Today', cats: 'Categories', top: 'Top', mine: 'Mine', search: 'Search',
+    featured: 'Editors’ choice', fresh: 'New', popular: 'Popular', all: 'All',
+    open: 'Open', openAuthor: 'Open at the author', demo: 'Demo to chat', demoSent: 'The demo is in your chat with the bot',
+    share: 'Share', copied: 'Link copied',
+    preview: 'Preview', light: 'Light', dark: 'Dark', about: 'Description',
+    previewNote: 'The preview is rendered in a browser and may differ slightly from Telegram. Buttons that need the author’s bot work only there.',
+    opens: 'opens', category: 'category', size: 'size', bytes: 'bytes',
+    empty: 'Nothing here yet', emptyHome: 'No widgets in the catalog yet. Be the first!', nothing: 'Nothing found',
+    searchHint: 'Name, description or bot',
+    addYours: 'Add your widget', addYoursSub: 'Forward it to the bot or upload its HTML',
+    submitTitle: 'New widget', myTitle: 'My widgets',
+    needTg: 'Open the catalog in Telegram to add widgets and get demos.', openTg: 'Open in Telegram',
+    stepForward: 'Forward a widget message to the bot', stepForwardSub: 'The easiest way: the bot takes the code and the data itself. Forwarding widgets is not open in production Telegram yet, so upload a file below instead.',
+    openBot: 'Open the bot', orFile: 'Or upload HTML', chooseFile: 'Choose a .html file', pasteHtml: 'or paste HTML here', next: 'Next',
+    name: 'Name', short: 'Short description', description: 'Long description', link: 'Link to your bot',
+    linkHint: '@username or t.me/username?start=…', categoryField: 'Category', icon: 'Icon', setIcon: 'Choose an icon',
+    sample: 'Sample data (public_data)', sampleHint: 'The data the widget is shown with in the preview and the demo. Up to 1024 bytes.',
+    send: 'Submit for review', sent: 'Submitted for review', remove: 'Delete', removeAsk: 'Delete this widget?',
+    status_draft: 'Draft', status_pending: 'In review', status_published: 'Published', status_rejected: 'Rejected',
+    requestNote: 'Requests to the author’s bot do not work in the demo', copiedText: 'Copied',
+    cat_donations: 'Donations', cat_games: 'Games', cat_giveaways: 'Giveaways', cat_polls: 'Polls',
+    cat_finance: 'Finance', cat_tools: 'Tools', cat_fun: 'Fun', cat_other: 'Other',
+    err_network: 'No connection to the server', err_internal: 'Something went wrong', err_auth: 'Open the catalog in Telegram',
+    err_name: 'Enter a name', err_short: 'Add a short description', err_category: 'Choose a category',
+    err_link: 'The link must lead to t.me/your_bot', err_empty: 'Add the widget HTML',
+    err_too_big: 'The widget is over 32,768 bytes', err_too_big_packed: 'The widget is over 4096 bytes after compression',
+    err_data_too_big: 'The data is over 1024 bytes', err_bad_icon: 'Could not read the icon', err_icon_too_big: 'The icon is too large',
+    err_start_bot: 'Send /start to the bot first', err_telegram: 'Telegram did not accept the widget', err_not_found: 'Widget not found', err_forbidden: 'No access',
+  },
+};
+
+export const t = (key) => S[lang][key] ?? S.en[key] ?? key;
+export const errorText = (e) => S[lang][`err_${e?.code}`] || S[lang].err_internal;
+export const CATEGORY_EMOJI = { donations: '💎', games: '🎮', giveaways: '🎁', polls: '📊', finance: '📈', tools: '🧰', fun: '🎉', other: '✨' };

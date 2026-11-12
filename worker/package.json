@@ -1,0 +1,19 @@
+{
+  "name": "widgets-store-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "test": "node --test",
+    "db:local": "wrangler d1 execute widgets-store --local --file schema.sql",
+    "db:remote": "wrangler d1 execute widgets-store --remote --file schema.sql",
+    "deploy": "wrangler deploy",
+    "setup": "node scripts/setup.mjs"
+  },
+  "dependencies": {
+    "@cloudflare/puppeteer": "^1.0.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.160.0"
+  }
+}
