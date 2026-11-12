@@ -104,9 +104,12 @@ async function api(req, env, ctx, url) {
       const user = w.status === 'published' ? null : await userOf(req, env);
       const mine = !!user && (w.owner_id === user.id || user.id === (await ownerId(env)));
       if (w.status !== 'published' && !mine) fail(404, 'not_found');
-      if (w.status === 'published' && w.icon_v === 0) {
-        // No icon yet: take the avatar of the author's bot once (-1 marks the attempt)
-        const res = await env.DB.prepare('UPDATE widgets SET icon_v = -1 WHERE id = ? AND icon_v = 0').bind(id).run();
+      // The icon follows the avatar of the author's bot: a failed attempt (stored as a negative time) is retried
+      // after 30 minutes, and an avatar we copied earlier is refreshed once a day.
+      const now = Date.now();
+      const iconDue = w.icon_v <= 0 ? now + w.icon_v > 30 * 60e3 : !!w.icon_bot && now - w.icon_v > 24 * 3600e3;
+      if (w.status === 'published' && iconDue) {
+        const res = await env.DB.prepare('UPDATE widgets SET icon_v = ? WHERE id = ? AND icon_v = ?').bind(w.icon_v <= 0 ? -now : now, id, w.icon_v).run();
         if (res.meta.changes) ctx.waitUntil(fetchBotIcon(env, id, w.bot).catch((e) => console.error('icon', e.message)));
       }
       if (w.status === 'published' && w.shot_v === 0) {
@@ -155,10 +158,10 @@ async function api(req, env, ctx, url) {
         await putBlob(env, id, 'icon', icon.type, icon.data);
         iconV = Date.now();
       }
-      await env.DB.prepare(`UPDATE widgets SET name = ?, short = ?, description = ?, category = ?, bot = ?, link = ?, public_data = ?, icon_v = ?, status = 'pending' WHERE id = ?`)
-        .bind(name, short, description, body.category, link.bot, link.link, publicData, iconV, id).run();
+      await env.DB.prepare(`UPDATE widgets SET name = ?, short = ?, description = ?, category = ?, bot = ?, link = ?, public_data = ?, icon_v = ?, icon_bot = ?, status = 'pending' WHERE id = ?`)
+        .bind(name, short, description, body.category, link.bot, link.link, publicData, iconV, body.icon ? 0 : w.icon_bot, id).run();
       // Without an uploaded icon the widget takes the avatar of the author's bot (again on every resubmit, the bot may have changed)
-      if (!body.icon && (w.icon_v <= 0 || w.bot !== link.bot)) ctx.waitUntil(fetchBotIcon(env, id, link.bot).catch((e) => console.error('icon', e.message)));
+      if (!body.icon && (w.icon_v <= 0 || w.icon_bot || w.bot !== link.bot)) ctx.waitUntil(fetchBotIcon(env, id, link.bot).catch((e) => console.error('icon', e.message)));
       ctx.waitUntil(sendToModeration(env, await getWidget(env, id)).catch((e) => console.error('moderation', e.message)));
       return json({ ok: true, status: 'pending' });
     }

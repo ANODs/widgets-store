@@ -93,6 +93,6 @@ export async function fetchBotIcon(env, id, bot) {
   const data = new Uint8Array(await img.arrayBuffer());
   if (!data.length || data.length > 400000) return false;
   await putBlob(env, id, 'icon', type, data);
-  await env.DB.prepare('UPDATE widgets SET icon_v = ? WHERE id = ?').bind(Date.now(), id).run();
+  await env.DB.prepare('UPDATE widgets SET icon_v = ?, icon_bot = 1 WHERE id = ?').bind(Date.now(), id).run();
   return true;
 }

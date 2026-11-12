@@ -138,7 +138,7 @@ async function onCallback(env, ctx, origin, q) {
     note = w.featured ? 'Убран из подборки' : 'Добавлен в подборку';
   }
   if (action === 'shot') {
-    if (w.icon_v <= 0) await fetchBotIcon(env, id, w.bot).catch(() => {});
+    if (w.icon_v <= 0 || w.icon_bot) await fetchBotIcon(env, id, w.bot).catch(() => {});
     try { await shoot(env, origin, id); note = 'Скриншоты обновлены'; } catch (e) { note = `Не вышло: ${e.message}`.slice(0, 190); }
   }
   w = await getWidget(env, id);
