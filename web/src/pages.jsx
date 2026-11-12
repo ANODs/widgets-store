@@ -163,7 +163,6 @@ export function WidgetPage({ id }) {
   const nav = useNav();
   const appScheme = useScheme();
   const [scheme, setScheme] = useState(appScheme);
-  const [live, setLive] = useState(false);
   const { data: w, loading, error } = useLoad(() => api(`/widgets/${id}`), [id]);
   useEffect(() => setScheme(appScheme), [appScheme]);
 
@@ -211,14 +210,7 @@ export function WidgetPage({ id }) {
             <button className={scheme === 'dark' ? 'on' : ''} onClick={() => setScheme('dark')}>{t('dark')}</button>
           </div>
         </div>
-        <div className={`chat chat-${scheme}`}>
-          {live ? <LiveFrame id={id} scheme={scheme} fixedHeight={w.height} /> : (
-            <div className={`bubble bubble-${scheme} still`} onClick={() => setLive(true)}>
-              <Shot w={w} scheme={scheme} />
-              <button className="run">▶ {t('runPreview')}</button>
-            </div>
-          )}
-        </div>
+        <div className={`chat chat-${scheme}`}><LiveFrame id={id} scheme={scheme} fixedHeight={w.height} /></div>
         <p className="note">{t('previewNote')}</p>
       </section>
       {w.description ? <Section title={t('about')}><p className="text">{w.description}</p></Section> : null}

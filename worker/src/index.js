@@ -180,8 +180,8 @@ async function frame(env, url, id) {
   return new Response(frameDoc(w, url.searchParams.get('theme')), {
     headers: {
       'content-type': 'text/html; charset=utf-8',
-      // Only the catalog itself may embed a widget frame
-      'content-security-policy': `${FRAME_CSP}; frame-ancestors ${new URL(env.WEB_URL).origin}`,
+      // No frame-ancestors here: in Telegram Web the catalog itself runs inside Telegram's frame, and the rule would block the preview
+      'content-security-policy': FRAME_CSP,
       'x-content-type-options': 'nosniff',
       'referrer-policy': 'no-referrer',
       'cache-control': w.status === 'published' ? 'public, max-age=300' : 'no-store',
