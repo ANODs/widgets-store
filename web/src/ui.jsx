@@ -98,7 +98,8 @@ export function LiveFrame({ id, scheme, version = 0, fixedHeight = 0 }) {
       const m = e.data;
       if (m.widget === 'height' && !fixedHeight) setHeight(Math.min(600, Math.max(50, Number(m.height) || 0)));
       // The preview is a sandbox: nothing a widget asks for leaves this page
-      if (m.widget === 'link' || m.widget === 'request' || m.widget === 'copy') toast(t('sandboxNote'));
+      // Requests are dropped silently: widgets also send them in the background, without a tap
+      if (m.widget === 'link' || m.widget === 'copy') toast(t('sandboxNote'));
     };
     addEventListener('message', on);
     return () => removeEventListener('message', on);
