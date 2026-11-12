@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { frameUrl, iconUrl, openLink, shotUrl, tg } from './api.js';
+import { frameUrl, iconUrl, shotUrl, tg } from './api.js';
 import { t } from './i18n.js';
 
 export const Nav = createContext(() => {});
@@ -97,9 +97,8 @@ export function LiveFrame({ id, scheme, version = 0, fixedHeight = 0 }) {
       if (!ref.current || e.source !== ref.current.contentWindow || !e.data || typeof e.data !== 'object') return;
       const m = e.data;
       if (m.widget === 'height' && !fixedHeight) setHeight(Math.min(600, Math.max(50, Number(m.height) || 0)));
-      if (m.widget === 'link') openLink(String(m.url));
-      if (m.widget === 'request') toast(t('requestNote'));
-      if (m.widget === 'copy') { navigator.clipboard?.writeText(String(m.text)).catch(() => {}); toast(t('copiedText')); }
+      // The preview is a sandbox: nothing a widget asks for leaves this page
+      if (m.widget === 'link' || m.widget === 'request' || m.widget === 'copy') toast(t('sandboxNote'));
     };
     addEventListener('message', on);
     return () => removeEventListener('message', on);

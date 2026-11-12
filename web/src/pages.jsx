@@ -163,7 +163,6 @@ export function WidgetPage({ id }) {
   const nav = useNav();
   const appScheme = useScheme();
   const [scheme, setScheme] = useState(appScheme);
-  const [busy, setBusy] = useState(false);
   const { data: w, loading, error } = useLoad(() => api(`/widgets/${id}`), [id]);
   useEffect(() => setScheme(appScheme), [appScheme]);
 
@@ -174,18 +173,6 @@ export function WidgetPage({ id }) {
     haptic();
     api(`/widgets/${id}/open`, { method: 'POST' }).catch(() => {});
     openLink(w.link);
-  };
-  const demo = async () => {
-    if (!canAuth) return openLink(shareUrl(id));
-    setBusy(true);
-    try {
-      await api(`/widgets/${id}/demo`, { method: 'POST' });
-      tg?.HapticFeedback?.notificationOccurred('success');
-      toast(t('demoSent'));
-    } catch (e) {
-      toast(errorText(e));
-    }
-    setBusy(false);
   };
   const share = () => {
     const url = shareUrl(id);
@@ -224,7 +211,6 @@ export function WidgetPage({ id }) {
           </div>
         </div>
         <div className={`chat chat-${scheme}`}><LiveFrame id={id} scheme={scheme} fixedHeight={w.height} /></div>
-        <div className="pad"><button className="secondary" disabled={busy} onClick={demo}>{t('demo')}</button></div>
         <p className="note">{t('previewNote')}</p>
       </section>
       {w.description ? <Section title={t('about')}><p className="text">{w.description}</p></Section> : null}

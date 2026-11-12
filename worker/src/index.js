@@ -120,7 +120,8 @@ async function api(req, env, ctx, url) {
     if (method === 'POST' && action === 'demo') {
       const user = await needUser(req, env);
       const w = await getWidget(env, id);
-      if (!w || (w.status !== 'published' && w.owner_id !== user.id)) fail(404, 'not_found');
+      // A demo runs the widget for real inside Telegram, so only its author and the moderator may ask for one
+      if (!w || (w.owner_id !== user.id && user.id !== (await ownerId(env)))) fail(404, 'not_found');
       try {
         await sendDemo(env, user, w);
       } catch (e) {
