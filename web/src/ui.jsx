@@ -81,11 +81,11 @@ export function Empty({ text }) {
   return <div className="empty">{text}</div>;
 }
 
-// A static picture when the worker has rendered one, otherwise the live stand-in frame
+// Catalog cards never run widget code: a rendered picture, or a neutral placeholder until there is one
 export function Shot({ w, scheme, className }) {
   const url = shotUrl(w, scheme);
   if (url) return <img className={className} src={url} alt="" loading="lazy" />;
-  return <iframe className={className} title={w.name} src={frameUrl(w.id, scheme)} sandbox="allow-scripts" loading="lazy" tabIndex={-1} style={{ pointerEvents: 'none' }} />;
+  return <div className={`shot-empty ${className || ''}`}><Icon w={w} size={56} /></div>;
 }
 
 export function LiveFrame({ id, scheme, version = 0, fixedHeight = 0 }) {
@@ -103,10 +103,11 @@ export function LiveFrame({ id, scheme, version = 0, fixedHeight = 0 }) {
     };
     addEventListener('message', on);
     return () => removeEventListener('message', on);
-  }, [id, fixedHeight]);
+  }, [id, scheme, version, fixedHeight]);
   return (
     <div className={`bubble bubble-${scheme}`}>
-      <iframe ref={ref} title="widget" src={frameUrl(id, scheme, version)} sandbox="allow-scripts" style={{ height }} />
+      {/* A new element per widget and theme: changing src in place would add a browser history entry */}
+      <iframe key={`${id}:${scheme}:${version}`} ref={ref} title="widget" src={frameUrl(id, scheme, version)} sandbox="allow-scripts" allow="" referrerPolicy="no-referrer" style={{ height }} />
     </div>
   );
 }

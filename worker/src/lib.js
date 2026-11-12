@@ -106,7 +106,9 @@ html{background:${p.bg_color};color:${p.text_color};font:16px/1.3125 -apple-syst
 body{margin:8px 12px;overflow:hidden}a{color:${p.link_color}}
 button{font:inherit;font-weight:500;border:0;border-radius:8px;padding:8px 14px;background:${p.button_color};color:${p.button_text_color};cursor:pointer}
 button:active{opacity:.7}button[disabled]{opacity:.5}hr{border:0;border-top:1px solid ${p.section_separator_color}}${fixed}</style>
-<script>(function(){var h={};var say=function(m){try{parent.postMessage(m,'*')}catch(e){}};
+<script>(function(){var h={};var sent=0;setInterval(function(){sent=0},1000);var say=function(m){if(++sent>20)return;try{parent.postMessage(m,'*')}catch(e){}};
+try{var no=function(){};history.pushState=no;history.replaceState=no;history.back=no;history.forward=no;history.go=no;window.open=function(){return null}}catch(e){}
+addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('a,area');if(a)e.preventDefault()},true);addEventListener('submit',function(e){e.preventDefault()},true);
 var hf={impactOccurred:function(){return hf},notificationOccurred:function(){return hf},selectionChanged:function(){return hf}};
 window.TelegramWidget={profile:1,isProfileAtLeast:function(n){return typeof n==='number'&&n<=1},colorScheme:'${scheme}',theme:'${scheme}',themeParams:Object.freeze(${inScript(p)}),
 isActive:true,isPreview:false,isForward:false,chatType:'private',viewer:{id:1,first_name:'Guest'},
@@ -123,7 +125,7 @@ addEventListener('load',function(){size();try{new ResizeObserver(size).observe(d
 ${html}`;
 }
 
-export const FRAME_CSP = "sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; font-src data:; media-src data:";
+export const FRAME_CSP = "sandbox allow-scripts; default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; font-src data:; media-src data:; form-action 'none'; base-uri 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'";
 
 // The public t.me page of a bot carries its avatar; a bot without one gets Telegram's own logo, which we skip.
 export function botAvatarUrl(pageHtml) {

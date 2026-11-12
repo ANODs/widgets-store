@@ -180,7 +180,8 @@ async function frame(env, url, id) {
   return new Response(frameDoc(w, url.searchParams.get('theme')), {
     headers: {
       'content-type': 'text/html; charset=utf-8',
-      'content-security-policy': FRAME_CSP,
+      // Only the catalog itself may embed a widget frame
+      'content-security-policy': `${FRAME_CSP}; frame-ancestors ${new URL(env.WEB_URL).origin}`,
       'x-content-type-options': 'nosniff',
       'referrer-policy': 'no-referrer',
       'cache-control': w.status === 'published' ? 'public, max-age=300' : 'no-store',

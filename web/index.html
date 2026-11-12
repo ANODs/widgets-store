@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
+    <!-- A widget frame can try to navigate itself elsewhere: only the preview host may ever be shown in a frame -->
+    <meta http-equiv="Content-Security-Policy" content="frame-src 'self' %VITE_API%; object-src 'none'; base-uri 'self'" />
     <title>Widgets Store</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>

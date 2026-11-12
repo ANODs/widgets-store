@@ -151,3 +151,8 @@ button[disabled] { opacity: 0.45; }
 .back + main .page { padding-top: 48px; }
 .back + main .header { padding-top: 56px; }
 .toast { position: fixed; left: 50%; bottom: calc(100px + var(--safe-bottom)); transform: translateX(-50%); max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 14px; background: rgba(30, 30, 32, 0.92); color: #fff; font-size: 14px; text-align: center; z-index: 20; animation: fade 0.2s ease; }
+
+.bubble.still { position: relative; cursor: pointer; }
+.bubble.still img { display: block; width: 100%; }
+.shot-empty { display: flex; align-items: center; justify-content: center; min-height: 190px; width: 100%; height: 100%; }
+.run { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); height: 36px; padding: 0 16px; border-radius: 30px; background: rgba(20, 20, 22, 0.78); color: #fff; font-size: 14px; font-weight: 600; white-space: nowrap; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }

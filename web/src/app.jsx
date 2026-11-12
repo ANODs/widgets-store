@@ -6,7 +6,7 @@ import { Categories, Home, Listing, Mine, Search, Submit, WidgetPage } from './p
 
 const TABS = ['', 'cats', 'top', 'mine'];
 
-// Routes live in history state, not in the URL: Telegram keeps its launch data in the URL fragment.
+// The first route comes from ?go= or the start parameter; Telegram keeps its launch data in the URL fragment.
 function initialRoute() {
   const go = new URLSearchParams(location.search).get('go');
   if (go && /^[a-z0-9/_-]{1,40}$/i.test(go)) return go;
@@ -55,22 +55,25 @@ function Screen({ route }) {
 }
 
 export default function App() {
-  const [route, setRoute] = useState(() => history.state?.route ?? initialRoute());
+  // The route stack lives in memory and never touches browser history: an embedded widget frame
+  // can add history entries of its own, and Back must not depend on them.
+  const [stack, setStack] = useState(() => [initialRoute()]);
+  const route = stack[stack.length - 1];
   const [toast, setToast] = useState('');
   const timer = useRef(0);
   const isRoot = TABS.includes(route) || route === 'search';
 
   const nav = useCallback((next, replace) => {
-    const depth = history.state?.depth || 0;
-    if (replace) history.replaceState({ route: next, depth }, '');
-    else history.pushState({ route: next, depth: depth + 1 }, '');
-    setRoute(next);
+    setStack((st) => {
+      if (TABS.includes(next) || next === 'search') return [next];
+      return replace ? [...st.slice(0, -1), next] : [...st, next].slice(-30);
+    });
     window.scrollTo(0, 0);
   }, []);
   const back = useCallback(() => {
-    if (history.state?.depth > 0) history.back();
-    else nav('', true);
-  }, [nav]);
+    setStack((st) => (st.length > 1 ? st.slice(0, -1) : ['']));
+    window.scrollTo(0, 0);
+  }, []);
   const showToast = useCallback((text) => {
     setToast(text);
     clearTimeout(timer.current);
@@ -78,15 +81,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!history.state) history.replaceState({ route, depth: 0 }, '');
-    const on = () => { setRoute(history.state?.route ?? ''); window.scrollTo(0, 0); };
-    addEventListener('popstate', on);
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      try { tg.setHeaderColor('secondary_bg_color'); } catch {}
-    }
-    return () => removeEventListener('popstate', on);
+    if (!tg) return;
+    tg.ready();
+    tg.expand();
+    try { tg.setHeaderColor('secondary_bg_color'); } catch {}
   }, []);
 
   useEffect(() => {
@@ -101,7 +99,7 @@ export default function App() {
     <Nav.Provider value={nav}>
       <Toast.Provider value={showToast}>
         {!isRoot && !tg ? <button className="back" onClick={back} aria-label="Back">‹</button> : null}
-        <main key={route}><Screen route={route} /></main>
+        <main key={`${stack.length}:${route}`}><Screen route={route} /></main>
         {isRoot ? <Tabbar route={route} nav={nav} /> : null}
         {toast ? <div className="toast">{toast}</div> : null}
       </Toast.Provider>
